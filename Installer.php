@@ -1,12 +1,12 @@
 <?php
-namespace App\Babel\Extension\uva;
+namespace App\Babel\Extension\uvalive;
 
 use App\Babel\Install\InstallerBase;
 use Exception;
 
 class Installer extends InstallerBase
 {
-    public $ocode="uva";
+    public $ocode="uvalive";
 
     public function install()
     {

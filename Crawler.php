@@ -1,5 +1,5 @@
 <?php
-namespace App\Babel\Extension\uva;//The 'template' should be replaced by the real oj code.
+namespace App\Babel\Extension\uvalive;
 
 use App\Babel\Crawl\CrawlerBase;
 use App\Models\ProblemModel;
@@ -11,7 +11,7 @@ use Exception;
 class Crawler extends CrawlerBase
 {
     public $oid=null;
-    public $prefix="UVa";
+    public $prefix="UVaLive";
     private $con;
     private $imgi;
     /**
@@ -24,7 +24,7 @@ class Crawler extends CrawlerBase
         $action=isset($conf["action"])?$conf["action"]:'crawl_problem';
         $con=isset($conf["con"])?$conf["con"]:'all';
         $cached=isset($conf["cached"])?$conf["cached"]:false;
-        $this->oid=OJModel::oid('uva');
+        $this->oid=OJModel::oid('uvalive');
 
         if(is_null($this->oid)) {
             throw new Exception("Online Judge Not Found");
@@ -46,7 +46,15 @@ class Crawler extends CrawlerBase
     {
         $problemModel=new ProblemModel();
         if ($con=='all') {
-            $res=Requests::get("https://uhunt.onlinejudge.org/api/p");
+            @$response=file_get_contents(__DIR__."/problemset.problems");
+            if ($response===false) {
+                $res=Requests::get("https://icpcarchive.ecs.baylor.edu/uhunt/api/p", [], ['timeout'=>600]);
+                $response=$res->body;
+                // cache to folder
+                $fp=fopen(__DIR__."/problemset.problems", "w");
+                fwrite($fp, $response);
+                fclose($fp);
+            }
             $result=json_decode($res->body, true);
             $info=[];
             for ($i=0; $i<count($result); ++$i) {
@@ -54,18 +62,18 @@ class Crawler extends CrawlerBase
             }
             ksort($info);
             foreach ($info as $key=>$value) {
-                $this->pro['pcode']='UVA'.$key;
+                $this->pro['pcode']='UVaLive'.$key;
                 $this->pro['OJ']=$this->oid;
                 $this->pro['contest_id']=null;
                 $this->pro['index_id']=$value[0];
-                $this->pro['origin']="https://uva.onlinejudge.org/index.php?option=com_onlinejudge&Itemid=8&page=show_problem&problem=".$value[0];
+                $this->pro['origin']="https://icpcarchive.ecs.baylor.edu/index.php?option=com_onlinejudge&Itemid=8&page=show_problem&problem=".$value[0];
                 $this->pro['title']=$value[1];
                 $this->pro['time_limit']=$value[3];
                 $this->pro['memory_limit']=131072; // Given in elder codes
                 $this->pro['solved_count']=$value[2];
                 $this->pro['input_type']='standard input';
                 $this->pro['output_type']='standard output';
-                $this->pro['description']="<a href=\"/external/gym/UVa{$key}.pdf\">[Attachment Link]</a>";
+                $this->pro['description']="<a href=\"/external/gym/UVaLive{$key}.pdf\">[Attachment Link]</a>";
                 $this->pro['input']='';
                 $this->pro['output']='';
                 $this->pro['note']='';
@@ -87,8 +95,8 @@ class Crawler extends CrawlerBase
             $this->data=array_keys($info);
         } else {
             $pf=substr($con, 0, strlen($con)-2);
-            $res=Requests::get("https://uva.onlinejudge.org/external/$pf/p$con.pdf");
-            file_put_contents(base_path("public/external/gym/UVa$con.pdf"), $res->body);
+            $res=Requests::get("https://icpcarchive.ecs.baylor.edu/external/$pf/p$con.pdf");
+            file_put_contents(base_path("public/external/gym/UVaLive$con.pdf"), $res->body);
         }
     }
 }

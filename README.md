@@ -1,2 +1,2 @@
-# NOJ_Extension_UVa
-UVa interface for NOJ
+# NOJ_Extension_UVaLive
+UVaLive interface for NOJ

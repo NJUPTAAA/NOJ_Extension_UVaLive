@@ -1,5 +1,5 @@
 <?php
-namespace App\Babel\Extension\uva;
+namespace App\Babel\Extension\uvalive;
 
 use App\Babel\Submit\Curl;
 use App\Models\CompilerModel;
@@ -19,7 +19,7 @@ class Submitter extends Curl
         $this->sub=& $sub;
         $this->post_data=$all_data;
         $judger=new JudgerModel();
-        $this->oid=OJModel::oid('uva');
+        $this->oid=OJModel::oid('uvalive');
         if(is_null($this->oid)) {
             throw new Exception("Online Judge Not Found");
         }
@@ -29,7 +29,7 @@ class Submitter extends Curl
 
     private function _login()
     {
-        $response=$this->grab_page("https://uva.onlinejudge.org/", 'uva', [], $this->selectedJudger['handle']);
+        $response=$this->grab_page("https://icpcarchive.ecs.baylor.edu/", 'uvalive', [], $this->selectedJudger['handle']);
         if (strpos($response, 'Logout')===false) {
             $post_data=[
                 'username' => $this->selectedJudger["handle"],
@@ -40,7 +40,7 @@ class Submitter extends Curl
             for ($i=0; $i<$inputs; ++$i) {
                 $post_data[$matches[1][$i]]=$matches[2][$i];
             }
-            $this->post_data('https://uva.onlinejudge.org/index.php?option=com_comprofiler&task=login', $post_data, 'uva', false, false, false, false, [], $this->selectedJudger['handle']);
+            $this->post_data('https://icpcarchive.ecs.baylor.edu/index.php?option=com_comprofiler&task=login', $post_data, 'uvalive', false, false, false, false, [], $this->selectedJudger['handle']);
         }
     }
 
@@ -52,7 +52,7 @@ class Submitter extends Curl
             'code'=>$this->post_data['solution'],
         ];
 
-        $response=$this->post_data("https://uva.onlinejudge.org/index.php?option=com_onlinejudge&Itemid=25&page=save_submission", $params, 'uva', true, false, true, false, [], $this->selectedJudger['handle']);
+        $response=$this->post_data("https://icpcarchive.ecs.baylor.edu/index.php?option=com_onlinejudge&Itemid=25&page=save_submission", $params, 'uvalive', true, false, true, false, [], $this->selectedJudger['handle']);
         $this->sub['jid']=$this->selectedJudger["jid"];
         if (preg_match('/Submission\+received\+with\+ID\+(\d+)/', $response, $match)) {
             $this->sub['remote_id']=$match[1];

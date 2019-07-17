@@ -1,5 +1,5 @@
 <?php
-namespace App\Babel\Extension\uva;
+namespace App\Babel\Extension\uvalive;
 
 use App\Babel\Submit\Curl;
 use App\Models\SubmissionModel;
@@ -35,13 +35,13 @@ class Judger extends Curl
         $this->judgerModel=new JudgerModel();
 
         $this->list = [];
-        $earliest = $this->submissionModel->getEarliestSubmission(OJModel::oid('uva'));
+        $earliest = $this->submissionModel->getEarliestSubmission(OJModel::oid('uvalive'));
         if (!$earliest) return;
 
         $judgerDetail=$this->judgerModel->detail($earliest['jid']);
         $this->handle=$judgerDetail['handle'];
 
-        $response=$this->grab_page("https://uhunt.onlinejudge.org/api/subs-user/".$judgerDetail['user_id']."/".($earliest['remote_id']-1), 'uva', [], $judgerDetail['handle']);
+        $response=$this->grab_page("https://icpcarchive.ecs.baylor.edu/uhunt/api/subs-user/".$judgerDetail['user_id']."/".($earliest['remote_id']-1), 'uvalive', [], $judgerDetail['handle']);
         $result=json_decode($response, true);
         foreach ($result['subs'] as $i) {
             $this->list[$i[0]]=['time'=>$i[3], 'verdict'=>$i[2]];
@@ -57,7 +57,7 @@ class Judger extends Curl
             }
             $sub['verdict']=$this->verdict[$this->list[$row['remote_id']]['verdict']];
             if ($sub['verdict']==='Compile Error') {
-                $response=$this->grab_page("https://uva.onlinejudge.org/index.php?option=com_onlinejudge&Itemid=9&page=show_compilationerror&submission=$row[remote_id]", 'uva', [], $this->handle);
+                $response=$this->grab_page("https://icpcarchive.ecs.baylor.edu/index.php?option=com_onlinejudge&Itemid=9&page=show_compilationerror&submission=$row[remote_id]", 'uvalive', [], $this->handle);
                 if (preg_match('/<pre>([\s\S]*)<\/pre>/', $response, $match)) {
                     $sub['compile_info']=trim($match[1]);
                 }

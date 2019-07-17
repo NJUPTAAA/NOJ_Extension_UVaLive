@@ -1,11 +1,11 @@
 {
-    "name":"UVa",
-    "code":"uva",
-    "icon":"resources/uva@2x.png",
+    "name":"UVaLive",
+    "code":"uvalive",
+    "icon":"resources/uvalive@2x.png",
     "type":"virtual-judge",
-    "description": "UVa interface for NOJ",
+    "description": "UVaLive interface for NOJ",
     "license": "MIT",
-    "repository":"https://github.com/NJUPTAAA/NOJ_Extensions_UVa",
+    "repository":"https://github.com/NJUPTAAA/NOJ_Extensions_UVaLive",
     "version":"0.0.1",
     "website":"https://acm.njupt.edu.cn/",
     "provider":{
