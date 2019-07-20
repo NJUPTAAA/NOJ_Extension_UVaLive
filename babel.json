@@ -5,7 +5,7 @@
     "type":"virtual-judge",
     "description": "UVaLive interface for NOJ",
     "license": "MIT",
-    "repository":"https://github.com/NJUPTAAA/NOJ_Extensions_UVaLive",
+    "repository":"https://github.com/NJUPTAAA/NOJ_Extension_UVaLive",
     "version":"0.1.0",
     "website":"https://icpcarchive.ecs.baylor.edu/",
     "provider":{
