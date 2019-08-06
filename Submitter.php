@@ -31,7 +31,7 @@ class Submitter extends Curl
     private function _login()
     {
         $response = $this->grab_page([
-            'site' => "https://onlinejudge.org/",
+            'site' => "https://icpcarchive.ecs.baylor.edu/",
             'oj' => 'uvalive',
             'handle' => $this->selectedJudger['handle'],
         ]);
@@ -46,7 +46,7 @@ class Submitter extends Curl
                 $post_data[$matches[1][$i]] = $matches[2][$i];
             }
             $this->post_data([
-                'site' => 'https://onlinejudge.org/index.php?option=com_comprofiler&task=login',
+                'site' => 'https://icpcarchive.ecs.baylor.edu/index.php?option=com_comprofiler&task=login',
                 'data' => $post_data,
                 'oj' => 'uvalive',
                 'ret' => false,
@@ -64,7 +64,7 @@ class Submitter extends Curl
         ];
 
         $response = $this->post_data([
-            'site' => "https://onlinejudge.org/index.php?option=com_onlinejudge&Itemid=25&page=save_submission",
+            'site' => "https://icpcarchive.ecs.baylor.edu/index.php?option=com_onlinejudge&Itemid=25&page=save_submission",
             'data' => $params,
             'oj' => 'uvalive',
             'ret' => true,
@@ -72,6 +72,7 @@ class Submitter extends Curl
             'handle' => $this->selectedJudger['handle'],
         ]);
         $this->sub['jid'] = $this->selectedJudger["jid"];
+        \Log::debug($response);
         if (preg_match('/Submission\+received\+with\+ID\+(\d+)/', $response, $match)) {
             $this->sub['remote_id'] = $match[1];
         } else {
