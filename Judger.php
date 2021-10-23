@@ -4,59 +4,73 @@ namespace App\Babel\Extension\uvalive;
 use App\Babel\Submit\Curl;
 use App\Models\Submission\SubmissionModel;
 use App\Models\JudgerModel;
-use App\Models\OJModel;
-use Requests;
-use Exception;
+use KubAT\PhpSimple\HtmlDomParser;
 use Log;
 
 class Judger extends Curl
 {
 
     public $verdict = [
-        10 => 'Submission Error',
-        15 => 'Submission Error', // Can't be judged
-        // 20 In queue
-        30 => "Compile Error",
-        35 => "Compile Error", // Restricted function
-        40 => "Runtime Error",
-        45 => "Output Limit Exceeded",
-        50 => "Time Limit Exceed",
-        60 => "Memory Limit Exceed",
-        70 => "Wrong Answer",
-        80 => "Presentation Error",
-        90 => "Accepted",
+        "Compilation error" => "Compile Error",
+        "Wrong answer" => "Wrong Answer",
+        "Accepted" => "Accepted",
+        "Time limit exceeded" => "Time Limit Exceed",
+        "Runtime error" => "Runtime Error",
+        'Submission error' => 'Submission Error',
+        "Output limit exceeded" => "Output Limit Exceeded",
+        "Memory limit exceed" => "Memory Limit Exceed",
     ];
     private $list = [];
+    private $proceedJID = [];
+    private $judgerDetails = [];
 
 
     public function __construct()
     {
         $this->submissionModel = new SubmissionModel();
         $this->judgerModel = new JudgerModel();
+    }
 
-        $this->list = [];
-        $earliest = $this->submissionModel->getEarliestSubmission(OJModel::oid('uvalive'));
-        if (!$earliest) return;
-
-        $judgerDetail = $this->judgerModel->detail($earliest['jid']);
-        $this->handle = $judgerDetail['handle'];
-
+    private function fetchRemoteVerdictList($judgerDetail)
+    {
+        if(in_array($judgerDetail['jid'], $this->proceedJID)) {
+            return true;
+        }
+        $this->proceedJID[] = $judgerDetail['jid'];
         $response = $this->grab_page([
-            'site' => "https://icpcarchive.ecs.baylor.edu/uhunt/api/subs-user/" . $judgerDetail['user_id'] . "/" . ($earliest['remote_id'] - 1),
+            'site' => "https://icpcarchive.ecs.baylor.edu/index.php?option=com_onlinejudge&Itemid=9&limit=100&limitstart=0",
             'oj' => 'uvalive',
             'handle' => $judgerDetail['handle'],
         ]);
-        $result = json_decode($response, true);
-        foreach ($result['subs'] as $i) {
-            $this->list[$i[0]] = ['time' => $i[3], 'verdict' => $i[2]];
+        $submissionsDOM = HtmlDomParser::str_get_html($response, true, true, DEFAULT_TARGET_CHARSET, false);
+        foreach ($submissionsDOM->find('td.maincontent tr') as $verdictDOM) {
+            if(in_array($verdictDOM->class, ['sectiontableentry1', 'sectiontableentry2'])) {
+                $remoteID = $verdictDOM->find('td', 0)->plaintext;
+                $verdict = trim($verdictDOM->find('td', 3)->plaintext);
+                $time = trim($verdictDOM->find('td', 5)->plaintext) * 1000;
+                $this->list[$remoteID] = [
+                    'time' => $time,
+                    'verdict' => $verdict
+                ];
+            }
         }
+    }
+
+    private function getJudgerDetails($JID)
+    {
+        if(!isset($this->judgerDetails[$JID])) {
+            $this->judgerDetails[$JID] = $this->judgerModel->detail($JID);
+        }
+        return $this->judgerDetails[$JID];
     }
 
     public function judge($row)
     {
+        $judgerDetail = $this->getJudgerDetails($row['jid']);
+        $this->fetchRemoteVerdictList($judgerDetail);
         if (array_key_exists($row['remote_id'], $this->list)) {
             $sub = [];
-            if (!isset($this->verdict[$this->list[$row['remote_id']]['verdict']])) { // Sometimes verdict is 0 and i have no idea why
+            if (!isset($this->verdict[$this->list[$row['remote_id']]['verdict']])) {
                 return;
             }
             $sub['verdict'] = $this->verdict[$this->list[$row['remote_id']]['verdict']];
@@ -64,7 +78,7 @@ class Judger extends Curl
                 $response = $this->grab_page([
                     'site' => "https://icpcarchive.ecs.baylor.edu/index.php?option=com_onlinejudge&Itemid=9&page=show_compilationerror&submission=$row[remote_id]",
                     'oj' => 'uvalive',
-                    'handle' => $this->handle,
+                    'handle' => $judgerDetail['handle'],
                 ]);
                 if (preg_match('/<pre>([\s\S]*)<\/pre>/', $response, $match)) {
                     $sub['compile_info'] = trim($match[1]);
@@ -74,9 +88,6 @@ class Judger extends Curl
             $sub['remote_id'] = $row['remote_id'];
             $sub['time'] = $this->list[$row['remote_id']]['time'];
 
-            // $ret[$row['sid']]=[
-            //     "verdict"=>$sub['verdict']
-            // ];
             $this->submissionModel->updateSubmission($row['sid'], $sub);
         }
     }
