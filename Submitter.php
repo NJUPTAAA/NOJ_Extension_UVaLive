@@ -7,6 +7,7 @@ use App\Models\JudgerModel;
 use App\Models\OJModel;
 use Illuminate\Support\Facades\Validator;
 use Requests;
+use Exception;
 
 class Submitter extends Curl
 {
@@ -72,7 +73,6 @@ class Submitter extends Curl
             'handle' => $this->selectedJudger['handle'],
         ]);
         $this->sub['jid'] = $this->selectedJudger["jid"];
-        \Log::debug($response);
         if (preg_match('/Submission\+received\+with\+ID\+(\d+)/', $response, $match)) {
             $this->sub['remote_id'] = $match[1];
         } else {
